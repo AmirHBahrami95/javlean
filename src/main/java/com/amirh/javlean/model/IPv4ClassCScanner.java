@@ -8,18 +8,31 @@ import java.util.ArrayList;
 
 import java.io.IOException;
 
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+
 /**
 	Class-C IPv4 Scanner!
 	@author Amir
 */
-public class IPv4ClassCScanner implements IPScanner{
+@XmlRootElement(name="IPv4_C")
+@XmlType(propOrder={"ip","sub_ips"})
+public class IPv4ClassCScanner implements IPScanner{ // XXX convert each IPScanner instance to IPv4... for xml (un)marshallizaiton
 	
+	@XmlElement(name="ip")
 	private String ip;
+	
+	@XmlElementWrapper(name="sub_ips")
+	@XmlElement(name="ipv4")
 	private List<String> subIps;
-	private int lowerBound;
-	private int upperBound;
-	private boolean done;
-	private int timeout;
+	
+	@XmlTransient private int lowerBound;
+	@XmlTransient private int upperBound;
+	@XmlTransient private boolean done;
+	@XmlTransient	private int timeout;
 	
 	/**
 		Take String fullIp (including the last octet), and apply 255.255.255.0

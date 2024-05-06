@@ -2,11 +2,16 @@ package com.amirh.javlean.model;
 
 import java.io.IOException;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 import java.net.Socket;
+
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 
 /**
 	the name suggests this is a simple implementation of a 
@@ -17,18 +22,23 @@ import java.net.Socket;
 	@see PortScanner 
 	@author Amir
 */
+@XmlRootElement(name="PortScan")
 public class SimplePortScanner implements PortScanner{
-
+	
+	@XmlElement(name="ip")
 	private String ip;
 	private boolean done;
-	private Map<PortInfo,Boolean> ports;
+
+	@XmlElementWrapper(name="ports") // what a stupid white-shank1
+	@XmlElement(name="port")
+	private List<PortInfo> ports;
 	private PortInfo[] portInfos;
 	
 	public SimplePortScanner(String ip,PortInfo[] portInfos){
 		this.ip=ip;
 		this.portInfos=portInfos;
 		this.done=false;
-		this.ports=new HashMap<PortInfo,Boolean>();
+		this.ports=new ArrayList<PortInfo>();
 	}
 	
 	@Override
@@ -38,6 +48,7 @@ public class SimplePortScanner implements PortScanner{
 			return;
 		}
 
+		/*
 		Iterator<Map.Entry<PortInfo,Boolean>> it=this.ports.entrySet().iterator();
 		Map.Entry<PortInfo,Boolean> entr;
 		System.out.println(this.ip);
@@ -49,16 +60,25 @@ public class SimplePortScanner implements PortScanner{
 				System.out.print("[ ] ");
 			System.out.println(entr.getKey().toString());
 		}
+		*/
+
 	}
 	
 	@Override
-	public Map<PortInfo,Boolean> getPorts(){
+	public List<PortInfo> getPorts(){
 		this.scan();
 		return this.ports;
 	}
 
 	@Override
-	public boolean tryPort(int portNo){return false;}
+	public boolean tryPort(int portNo){
+		try(Socket s=new Socket(this.ip,portNo)){ // implicitly converted to InetAddress(4/6)
+			s.setSoTimeout(5000); // 5 seconds
+			return s.isConnected();
+		}catch(IOException ioe){
+			return false;
+		}
+	}
 
 	@Override
 	public String getIp(){return this.ip;}
@@ -67,19 +87,10 @@ public class SimplePortScanner implements PortScanner{
 	public void scan(){
 		if(!this.done){
 			for(int i=0;i<portInfos.length;i++)
-				this.ports.put(portInfos[i],isOpen(portInfos[i].getPortNo()));
+				if(tryPort(portInfos[i].getPortNo()))
+					this.ports.add(portInfos[i]);
 		}
 		this.done=true; // do only once per instance (for now)
-	}
-
-	// ----------------------------------pvt.parts!
-	private boolean isOpen(int portNo){
-		try(Socket s=new Socket(this.ip,portNo)){ // implicitly converted to InetAddress(4/6)
-			s.setSoTimeout(5000); // 5 seconds
-			return s.isConnected();
-		}catch(IOException ioe){
-			return false;
-		}
 	}
 
 }

@@ -1,6 +1,6 @@
 package com.amirh.javlean.model;
 
-import java.util.Map;
+import java.util.List;
 
 /**
 	Receives an ip Address, along with optional Headers
@@ -9,7 +9,7 @@ import java.util.Map;
 */
 public interface PortScanner{
 	public void scan();
-	public Map<PortInfo,Boolean> getPorts();
+	public List<PortInfo> getPorts();
 	public boolean tryPort(int portNo);
 	public String getIp();
 	public void print();

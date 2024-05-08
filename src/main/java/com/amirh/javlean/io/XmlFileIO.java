@@ -12,20 +12,28 @@ import javax.xml.bind.JAXBException;
 import com.amirh.javlean.model.IPv4ClassCScanner;
 import com.amirh.javlean.model.SimplePortScanner;
 
+@Deprecated
 public final class XmlFileIO{
+	
+	private static void marshalize(JAXBContext context,Object o,String path) throws JAXBException{
+		Marshaller m = context.createMarshaller();
+		m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+		m.marshal(o,new File(path));	
+	}
+
+	public static void marshal(SimplePortScanner[] spscs,String path) throws JAXBException{
+		JAXBContext context = JAXBContext.newInstance(SimplePortScanner.class);
+		marshalize(context,spscs,path);
+	}
 
 	public static void marshal(IPv4ClassCScanner ipsc,String path) throws JAXBException{
 		JAXBContext context = JAXBContext.newInstance(IPv4ClassCScanner.class);
-		Marshaller m = context.createMarshaller();
-		m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-		m.marshal(ipsc,new File(path));
+		marshalize(context,ipsc,path);
 	}
 
 	public static void marshal(SimplePortScanner spsc,String path) throws JAXBException{
 		JAXBContext context = JAXBContext.newInstance(SimplePortScanner.class);
-		Marshaller m = context.createMarshaller();
-		m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-		m.marshal(spsc,new File(path));
+		marshalize(context,spsc,path);
 	}
 	
 	// TODO fix this mofo

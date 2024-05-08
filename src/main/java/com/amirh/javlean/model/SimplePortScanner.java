@@ -1,7 +1,5 @@
 package com.amirh.javlean.model;
 
-import java.io.IOException;
-
 import java.util.List;
 import java.util.ArrayList;
 
@@ -12,6 +10,14 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+
+import java.io.IOException;
+import java.io.File;
 
 /**
 	the name suggests this is a simple implementation of a 
@@ -27,12 +33,14 @@ public class SimplePortScanner implements PortScanner{
 	
 	@XmlElement(name="ip")
 	private String ip;
-	private boolean done;
 
 	@XmlElementWrapper(name="ports") // what a stupid white-shank1
-	@XmlElement(name="port")
 	private List<PortInfo> ports;
-	private PortInfo[] portInfos;
+
+	@XmlTransient private PortInfo[] portInfos;
+	@XmlTransient private boolean done;
+
+	public SimplePortScanner(){}
 	
 	public SimplePortScanner(String ip,PortInfo[] portInfos){
 		this.ip=ip;
@@ -47,21 +55,9 @@ public class SimplePortScanner implements PortScanner{
 			System.out.println("[NOT_READY]");
 			return;
 		}
-
-		/*
-		Iterator<Map.Entry<PortInfo,Boolean>> it=this.ports.entrySet().iterator();
-		Map.Entry<PortInfo,Boolean> entr;
-		System.out.println(this.ip);
-		while(it.hasNext()){
-			entr=it.next();
-			if(entr.getValue())
-				System.out.print("[x] ");
-			else
-				System.out.print("[ ] ");
-			System.out.println(entr.getKey().toString());
-		}
-		*/
-
+		
+		for(int i=0;i<this.ports.size();i++)
+			System.out.println(ip+":"+ports.get(i));
 	}
 	
 	@Override
@@ -91,6 +87,17 @@ public class SimplePortScanner implements PortScanner{
 					this.ports.add(portInfos[i]);
 		}
 		this.done=true; // do only once per instance (for now)
+	}
+
+	@Override
+	public void marshalTo(String path) throws JAXBException,IOException{
+		JAXBContext context=JAXBContext.newInstance(SimplePortScanner.class);
+		Marshaller m = context.createMarshaller();
+		File f=new File(path);
+		if(f.isDirectory()) throw new JAXBException("you don't expect me to write xml to a direcotry do you?!");
+		if(!f.exists()) f.createNewFile();
+		m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+		m.marshal(this,f);	
 	}
 
 }

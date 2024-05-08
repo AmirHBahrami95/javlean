@@ -14,19 +14,41 @@ import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.JAXBException;
+
+import java.io.File;
+
 /**
 	Class-C IPv4 Scanner!
 	@author Amir
 */
 @XmlRootElement(name="IPv4_C")
-@XmlType(propOrder={"ip","sub_ips"})
 public class IPv4ClassCScanner implements IPScanner{ // XXX convert each IPScanner instance to IPv4... for xml (un)marshallizaiton
-	
-	@XmlElement(name="ip")
+
+	/**
+		Take String fullIp (including the last octet), and apply 255.255.255.0
+		netmask to it, to make it suitable for a ipv4 scan
+		@param fullIp String
+		@return IPv4ClassCScanner
+	*/
+	public static IPv4ClassCScanner ofHost(String host,int lower,int upper) throws UnknownHostException{
+		String ip=InetAddress.getByName(host).getHostAddress();
+		String[] sections=ip.split("\\.");
+		return new IPv4ClassCScanner(sections[0]+"."+sections[1]+"."+sections[2],lower,upper);
+	}
+
+	public static IPv4ClassCScanner ofHost(String host) throws UnknownHostException {
+		return ofHost(host,0,255);
+	}
+
+	// ---------------------------------------------------------------------------------------end_of_static 
+
+	// @XmlElement(name="ip") XXX for now
 	private String ip;
 	
-	@XmlElementWrapper(name="sub_ips")
-	@XmlElement(name="ipv4")
 	private List<String> subIps;
 	
 	@XmlTransient private int lowerBound;
@@ -34,25 +56,10 @@ public class IPv4ClassCScanner implements IPScanner{ // XXX convert each IPScann
 	@XmlTransient private boolean done;
 	@XmlTransient	private int timeout;
 	
-	/**
-		Take String fullIp (including the last octet), and apply 255.255.255.0
-		netmask to it, to make it suitable for a ipv4 scan
-		@param fullIp String
-		@return IPv4ClassCScanner
-	*/
-	public static IPv4ClassCScanner ofHost(String host) throws UnknownHostException {
-		
-		String ip=InetAddress.getByName(host).getHostAddress();
-		String[] sections=ip.split("\\.");
 
-		// System.out.println("InetAdress:"+ip);
+	public IPv4ClassCScanner(){}
 
-		return new IPv4ClassCScanner(sections[0]+"."+sections[1]+"."+sections[2]);
-	}
-
-
-
-	public IPv4ClassCScanner(String ip,int timeout,int lower,int upper){
+	public IPv4ClassCScanner(String ip,int lower,int upper,int timeout){
 		// TODO check if ip is c-class
 		this.ip=ip;
 		this.lowerBound=lower;
@@ -60,17 +67,18 @@ public class IPv4ClassCScanner implements IPScanner{ // XXX convert each IPScann
 		this.done=false;
 		this.timeout=timeout;
 		this.subIps=new ArrayList<String>();
-		System.out.println(this.ip);
+	}
+
+	public IPv4ClassCScanner(String ip,int lower,int upper){
+		this(ip,lower,upper,2000);
 	}
 
 	public IPv4ClassCScanner(String ip){
-		this(ip,2000,1,255);
+		this(ip,1,255);
 	}
 
-	public IPv4ClassCScanner(String ip,int timeout){
-		this(ip);
-	}
-
+	@XmlElementWrapper(name="Subnet")
+	@XmlElement(name="ip")
 	@Override
 	public List<String> getSubIps(){
 		scan();
@@ -89,16 +97,11 @@ public class IPv4ClassCScanner implements IPScanner{ // XXX convert each IPScann
 		InetAddress iadr;
 		for(int i=this.lowerBound;i<=this.upperBound;i++){
 			try{
-				// System.out.print(ip+"."+i);
 				iadr=InetAddress.getByName(ip+"."+i);
-				if(iadr.isReachable(this.timeout)){ // ping
+				if(iadr.isReachable(this.timeout))
 					this.subIps.add(ip+"."+i);
-					System.out.println("[x] "+ip+"."+i);
-				}
-				else
-					System.out.println("[ ] "+ip+"."+i);
 			}catch(IOException ioe){
-				System.out.println("[ ] "+ip+"."+i);
+				System.out.println("[error]"+ioe.getMessage());
 			}
 		}
 		this.done=true;
@@ -114,6 +117,14 @@ public class IPv4ClassCScanner implements IPScanner{ // XXX convert each IPScann
 	public void setHigherBound(int bound){
 		if(bound<this.lowerBound)throw new IllegalArgumentException("given 'higherBound' cannot bet set: lowerBound>higherBound");
 		this.upperBound=bound;
+	}
+
+	@Override
+	public void marshalTo(String path) throws JAXBException{
+		JAXBContext context=JAXBContext.newInstance(IPv4ClassCScanner.class);
+		Marshaller m = context.createMarshaller();
+		m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+		m.marshal(this,new File(path));	
 	}
 	
 }

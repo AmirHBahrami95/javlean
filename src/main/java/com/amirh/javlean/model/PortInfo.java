@@ -14,11 +14,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name="Port")
 public final class PortInfo{
 	
-	@XmlElement(name="title")
-	private String title; // http, ftp, etc.
+	@XmlTransient private String title; // http, ftp, etc.
+	@XmlTransient private int portNo;
 
-	@XmlElement(name="number")
-	private int portNo;
+	public PortInfo(){};
 
 	public PortInfo(int portNo,String title){
 		this.portNo=portNo;
@@ -29,12 +28,14 @@ public final class PortInfo{
 		this(portNo,title);
 	}
 	
-	@XmlElement(name="shorthand")
 	@Override
 	public String toString(){return title+" ("+portNo+")";}
 	
+	@XmlElement(name="title")
 	public String getTitle(){return this.title;}
 	public void setTitle(String title){this.title=title;}
+
+	@XmlElement(name="num")
 	public int getPortNo(){return this.portNo;}
 	public void setPortNo(int portNo){this.portNo=portNo;}
 }

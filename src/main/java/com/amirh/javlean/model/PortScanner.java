@@ -2,6 +2,10 @@ package com.amirh.javlean.model;
 
 import java.util.List;
 
+import javax.xml.bind.JAXBException;
+
+import java.io.IOException;
+
 /**
 	Receives an ip Address, along with optional Headers
 	and tries out most famous ports for that ip address
@@ -13,4 +17,5 @@ public interface PortScanner{
 	public boolean tryPort(int portNo);
 	public String getIp();
 	public void print();
+	public void marshalTo(String path) throws JAXBException,IOException;
 }
